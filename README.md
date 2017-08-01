@@ -16,6 +16,10 @@ Simple [janus](https://github.com/meetecho/janus-gateway) client API. It aims to
 
 ### Initialization
 
+```html
+<script src="sjc.videoroom.js"></script>
+```
+
 ```javascript
 videoroom = new VideoRoom("ws://localhost:8020");
 ```
