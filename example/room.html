@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Video Chat Demo</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css">
+
+  <style>
+    body {
+      padding-top: 50px;
+    }
+
+    .main {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">Video Chat Demo</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">My Video</div>
+                <div class="panel-body">
+                  <video src="" width="100%" id="localVideo" autoplay muted></video>
+                  <button class="btn btn-block btn-success" id="publish">Publish</button>
+                  <button class="btn btn-block btn-danger" id="unpublish" disabled>Unpublish</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">Publishers</div>
+                <div class="panel-body">
+                  <ul id="publisherList"></ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-9">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="panel panel-default">
+                <div class="panel-heading">Remote Videos</div>
+                <div class="panel-body">
+                  <div class="row" id="remoteVideos"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/8.1.1/simplepeer.min.js"></script>
+  <script src="../sjc.js"></script>
+  <script>
+    var videoroom;
+    var room = sessionStorage.getItem('room');
+    var initiator = sessionStorage.getItem('initiator');
+    var username = randomString();
+    var publishers = {};
+
+    $(function() {
+      if (!room && !getURLParameter('room')) {
+        window.location = '/'
+      }
+
+      videoroom = new VideoRoom("ws://localhost:8020");
+      videoroom.onReady = function() {
+        if (initiator) {
+          videoroom.createRoom(room);
+        } else {
+          videoroom.joinRoom(getURLParameter('room'));
+        }
+      };
+      videoroom.onJoinRoom = function(data) {
+        history.replaceState('', '', window.location.origin + '/room.html?room=' + data.room);
+        sessionStorage.clear();
+        data.publishers.forEach(function(pub, i) {
+          publishers[pub.id] = { id: pub.id, name: pub.display };
+        }); 
+        populateList();
+      };
+      videoroom.onLocalStream = function(stream) {
+        var video = document.querySelector("#localVideo");
+        video.srcObject = stream;
+      };
+      videoroom.onRemoteStream = function(id, stream) {
+        $('#remoteVideos').append('<div class="col-md-4"><video src="' + window.URL.createObjectURL(stream) + '" width="100%" id="remoteVideo-' + id + '" autoplay></video></div>');
+      };
+      videoroom.onEvent = function(event, data) {
+        if (event == 'publisher') {
+          if (data.event == 'new') {
+            publishers[data.publisher.id] = { id: data.publisher.id, name: data.publisher.display };
+            populateList();
+          } else if (data.event == 'left') {
+            if ($('#remoteVideo-' + data.publisher).length == 1) {
+              $('#remoteVideo-' + data.publisher).parent().remove();
+            }
+            delete publishers[data.publisher];
+            populateList();
+          }
+        }
+      };
+      videoroom.onError = function(error) {
+        console.log(error);
+      };
+
+      $('#publish').on('click', function(evt) {
+        evt.preventDefault();
+        $(this).attr('disabled', true);
+        $('#unpublish').attr('disabled', false);
+        videoroom.publish(username);
+      });
+      $('#unpublish').on('click', function(evt) {
+        evt.preventDefault();
+        $(this).attr('disabled', true);
+        $('#publish').attr('disabled', false);
+        videoroom.unpublish();
+      });
+      $('#publisherList').on('click', '.subscribe', function(evt) {
+        evt.preventDefault();
+        if ($('#remoteVideo-' + $(this).data('id')).length == 0) {
+          videoroom.subscribe($(this).data('id'));
+        }
+      });
+    });
+
+    function populateList() {
+      $('#publisherList').empty();
+      for (var id in publishers) {
+        var pub = publishers[id];
+        $('#publisherList').append('<li><a class="subscribe" data-id="' + pub.id + '">' + pub.name + '</a></li>');
+      }
+    }
+
+    function getURLParameter(name) {
+      return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)').exec(location.search) || [null, ''])[1].replace(/\+/g, '%20')) || null;
+    }
+
+    function randomString() {
+      var charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      var randomstring = '';
+
+      for (var i = 0; i < 16; i++) {
+        var randompos = Math.floor(Math.random() * charset.length);
+        randomstring += charset.substring(randompos, randompos+1);
+      }
+
+      return randomstring;
+    }
+  </script>
+</body>
+
+</html>
