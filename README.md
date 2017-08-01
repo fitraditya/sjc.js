@@ -12,15 +12,17 @@ Simple [janus](https://github.com/meetecho/janus-gateway) client API. It aims to
 
 # API
 
-## Initialization
+## Video Room
+
+### Initialization
 
 ```javascript
 videoroom = new VideoRoom("ws://localhost:8020");
 ```
 
-## Method
+### Method
 
-#### Create ROom
+#### Create Room
 
 Parameter:
 - Room: integer
