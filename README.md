@@ -24,7 +24,7 @@ Simple [janus](https://github.com/meetecho/janus-gateway) client API. It aims to
 videoroom = new VideoRoom("ws://localhost:8020");
 ```
 
-### Method
+### Methods
 
 #### Create Room
 
@@ -66,3 +66,30 @@ Parameter:
 
 ```javascript
 videoroom.string(target);
+```
+
+### Events
+
+#### `videoroom.onReady = function() {}`
+
+Called when user connected to janus signaling server.
+
+#### `videoroom.onJoinRoom = function(data) {}`
+
+Called when user joined to room.
+
+#### `videoroom.onLocalStream = function(stream) {}`
+
+Called when user has a local video (stream).
+
+#### `videoroom.onRemoteStream = function(stream) {}`
+
+Called when user received a remote video (stream) after subscribing.
+
+#### `videoroom.onEvent = function(event, data) {}`
+
+Called when user received a janus event.
+
+#### `videoroom.onError = function(error) {}`
+
+Called when error occured.
