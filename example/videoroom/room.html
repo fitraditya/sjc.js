@@ -31,6 +31,12 @@
         </button>
         <a class="navbar-brand" href="#">Video Chat Demo</a>
       </div>
+      <div id="navbar" class="navbar-collapse collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li><a data-toggle="modal" data-target="#myModal">Help</a></li>
+          <li><a id="logout">Logout</a></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -76,6 +82,27 @@
       </div>
     </div>
   </div>
+  <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title" id="myModalLabel">Help</h4>
+        </div>
+        <div class="modal-body">
+          <ol>
+            <li>Click <b>Publish</b> to publish your stream.</li>
+            <li>Click <b>Unpublish</b> to unpublish your stream.</li>
+            <li>Click publisher username on <b>Publishers</b> list to subscribe its stream.</li>
+            <li>Click <b>Logout</b> quit this demo page.</li>
+          </ol>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-info" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/simple-peer/8.1.1/simplepeer.min.js"></script>
@@ -101,7 +128,7 @@
         }
       };
       videoroom.onJoinRoom = function(data) {
-        history.replaceState('', '', window.location.origin + '/room.html?room=' + data.room);
+        history.replaceState('', '', window.location.origin + '/example/videoroom/room.html?room=' + data.room);
         sessionStorage.clear();
         data.publishers.forEach(function(pub, i) {
           publishers[pub.id] = { id: pub.id, name: pub.display };
@@ -149,6 +176,13 @@
         evt.preventDefault();
         if ($('#remoteVideo-' + $(this).data('id')).length == 0) {
           videoroom.subscribe($(this).data('id'));
+        }
+      });
+      $('#logout').on('click', function(evt) {
+        evt.preventDefault();
+        if (confirm("Are you sure want to log out?")) {
+          sessionStorage.clear();
+          window.location = 'index.html';
         }
       });
     });
